@@ -20,7 +20,7 @@ const Posting = sequelize.define('Posting', {
     allowNull: false,
   },
   age: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: true,
   },
   gender: {
@@ -32,7 +32,7 @@ const Posting = sequelize.define('Posting', {
     allowNull: true,
   },
   adoption_fee: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     allowNull: true,
   },
   story: {

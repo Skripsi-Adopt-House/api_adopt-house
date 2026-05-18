@@ -59,8 +59,8 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✓ Database connection established');
 
-    // Sync database (set alter: true untuk development, false untuk production)
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    // Sync database (set alter: false untuk development, false untuk production)
+    await sequelize.sync({ alter: false });
     console.log('✓ Database synchronized');
 
     app.listen(PORT, () => {

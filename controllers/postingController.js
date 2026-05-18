@@ -49,14 +49,37 @@ const createPosting = async (req, res) => {
       });
     }
 
+    // Parse numeric values
+    let parsedAge = null;
+    if (age !== undefined && age !== null && age !== '') {
+      parsedAge = parseFloat(age);
+      if (isNaN(parsedAge) || parsedAge < 0.1 || parsedAge > 99.9) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Age harus berupa angka positif 0.1-99.9 (contoh: 0.5, 1, 2.5)',
+        });
+      }
+    }
+
+    let parsedAdoptionFee = null;
+    if (adoption_fee !== undefined && adoption_fee !== null && adoption_fee !== '') {
+      parsedAdoptionFee = parseInt(adoption_fee);
+      if (isNaN(parsedAdoptionFee) || parsedAdoptionFee < 0) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Adoption fee harus berupa angka positif',
+        });
+      }
+    }
+
     // Create posting
     const newPosting = await Posting.create({
       admin_id: req.user.id,
       name,
-      age: age || null,
+      age: parsedAge,
       gender: gender || null,
       breed: breed || null,
-      adoption_fee: adoption_fee || null,
+      adoption_fee: parsedAdoptionFee,
       story: story || null,
     });
 
@@ -193,15 +216,37 @@ const updatePosting = async (req, res) => {
       });
     }
 
+    // Parse numeric values
+    let parsedAge = posting.age;
+    if (age !== undefined && age !== null && age !== '') {
+      parsedAge = parseFloat(age);
+      if (isNaN(parsedAge) || parsedAge < 0.1 || parsedAge > 99.9) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Age harus berupa angka positif 0.1-99.9 (contoh: 0.5, 1, 2.5)',
+        });
+      }
+    }
+
+    let parsedAdoptionFee = posting.adoption_fee;
+    if (adoption_fee !== undefined && adoption_fee !== null && adoption_fee !== '') {
+      parsedAdoptionFee = parseInt(adoption_fee);
+      if (isNaN(parsedAdoptionFee) || parsedAdoptionFee < 0) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Adoption fee harus berupa angka positif',
+        });
+      }
+    }
+
     // Update posting
     await posting.update({
       name: name || posting.name,
-      age: age !== undefined ? age : posting.age,
+      age: parsedAge,
       gender: gender || posting.gender,
       breed: breed || posting.breed,
-      adoption_fee: adoption_fee !== undefined ? adoption_fee : posting.adoption_fee,
+      adoption_fee: parsedAdoptionFee,
       story: story || posting.story,
-      updated_at: new Date(),
     });
 
     const updatedPosting = await Posting.findByPk(id, {
