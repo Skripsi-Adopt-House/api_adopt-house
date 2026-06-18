@@ -27,6 +27,9 @@ app.use('/api/favorites', favoriteRoutes);
 // Health check endpoint - Test database connection
 app.get('/api/health', async (req, res) => {
   try {
+    // Ensure database is initialized
+    await initDatabase();
+    
     await sequelize.authenticate();
     res.status(200).json({
       status: 'success',
@@ -35,6 +38,7 @@ app.get('/api/health', async (req, res) => {
       database: 'connected',
     });
   } catch (error) {
+    console.error('Health check error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Database connection failed',
@@ -62,15 +66,27 @@ app.use((err, req, res, next) => {
 });
 
 // Initialize database
+let dbInitialized = false;
 const initDatabase = async () => {
+  if (dbInitialized) return;
+  
   try {
+    console.log('Attempting to connect to database...');
+    console.log('DB_HOST:', process.env.DB_HOST);
+    console.log('DB_NAME:', process.env.DB_NAME);
+    console.log('DB_USER:', process.env.DB_USER);
+    
     await sequelize.authenticate();
     console.log('✓ Database connection established');
 
     await sequelize.sync({ alter: false });
     console.log('✓ Database synchronized');
+    
+    dbInitialized = true;
   } catch (error) {
     console.error('✗ Database error:', error.message);
+    console.error('Full error:', error);
+    dbInitialized = false;
     throw error;
   }
 };
@@ -101,8 +117,16 @@ if (process.env.NODE_ENV !== 'production') {
   startServer();
 } else {
   // Initialize for production (Vercel serverless)
+  console.log('Production mode detected - initializing database...');
   initDatabase().catch(error => {
     console.error('✗ Production init error:', error.message);
+    console.error('Environment variables check:');
+    console.error('- NODE_ENV:', process.env.NODE_ENV);
+    console.error('- DB_HOST:', process.env.DB_HOST ? '✓' : '✗ MISSING');
+    console.error('- DB_PORT:', process.env.DB_PORT ? '✓' : '✗ MISSING');
+    console.error('- DB_NAME:', process.env.DB_NAME ? '✓' : '✗ MISSING');
+    console.error('- DB_USER:', process.env.DB_USER ? '✓' : '✗ MISSING');
+    console.error('- DB_PASSWORD:', process.env.DB_PASSWORD ? '✓' : '✗ MISSING');
   });
 }
 
