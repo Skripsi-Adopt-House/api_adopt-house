@@ -24,12 +24,23 @@ app.use('/api/postings', postingRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/favorites', favoriteRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'Server is running',
-  });
+// Health check endpoint - Test database connection
+app.get('/api/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.status(200).json({
+      status: 'success',
+      message: 'Server is running',
+      environment: process.env.NODE_ENV,
+      database: 'connected',
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Database connection failed',
+      error: error.message,
+    });
+  }
 });
 
 // 404 handler
@@ -50,19 +61,27 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Initialize database
+const initDatabase = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✓ Database connection established');
+
+    await sequelize.sync({ alter: false });
+    console.log('✓ Database synchronized');
+  } catch (error) {
+    console.error('✗ Database error:', error.message);
+    throw error;
+  }
+};
+
 // Start server (only for local development)
 const PORT = process.env.PORT || 3000;
 
 if (process.env.NODE_ENV !== 'production') {
   const startServer = async () => {
     try {
-      // Test database connection
-      await sequelize.authenticate();
-      console.log('✓ Database connection established');
-
-      // Sync database (set alter: false untuk development, false untuk production)
-      await sequelize.sync({ alter: false });
-      console.log('✓ Database synchronized');
+      await initDatabase();
 
       app.listen(PORT, () => {
         console.log(`✓ Server is running on port ${PORT}`);
@@ -80,6 +99,11 @@ if (process.env.NODE_ENV !== 'production') {
   };
 
   startServer();
+} else {
+  // Initialize for production (Vercel serverless)
+  initDatabase().catch(error => {
+    console.error('✗ Production init error:', error.message);
+  });
 }
 
 module.exports = app;
