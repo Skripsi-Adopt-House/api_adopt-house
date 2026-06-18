@@ -1,5 +1,6 @@
 require('dotenv').config();
 const Sequelize = require('sequelize');
+const pg = require('pg');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -11,6 +12,7 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
+    dialectModule: pg,
     logging: isProduction ? false : console.log,
     ssl: true,
     dialectOptions: {
