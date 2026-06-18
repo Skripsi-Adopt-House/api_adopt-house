@@ -50,34 +50,36 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server (only for local development)
 const PORT = process.env.PORT || 3000;
 
-const startServer = async () => {
-  try {
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('✓ Database connection established');
+if (process.env.NODE_ENV !== 'production') {
+  const startServer = async () => {
+    try {
+      // Test database connection
+      await sequelize.authenticate();
+      console.log('✓ Database connection established');
 
-    // Sync database (set alter: false untuk development, false untuk production)
-    await sequelize.sync({ alter: false });
-    console.log('✓ Database synchronized');
+      // Sync database (set alter: false untuk development, false untuk production)
+      await sequelize.sync({ alter: false });
+      console.log('✓ Database synchronized');
 
-    app.listen(PORT, () => {
-      console.log(`✓ Server is running on port ${PORT}`);
-      console.log(`✓ API documentation:`);
-      console.log(`  - Auth: POST /api/auth/register, POST /api/auth/login, POST /api/auth/logout`);
-      console.log(`  - Postings: GET /api/postings, POST /api/postings (admin), GET/PUT/DELETE /api/postings/:id (admin)`);
-      console.log(`  - Health: POST/PUT /api/health/:posting_id (admin), GET /api/health/:posting_id`);
-      console.log(`  - Favorites: POST/GET/DELETE /api/favorites (user only)`);
-      console.log(`\n✓ Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  } catch (error) {
-    console.error('✗ Failed to start server:', error.message);
-    process.exit(1);
-  }
-};
+      app.listen(PORT, () => {
+        console.log(`✓ Server is running on port ${PORT}`);
+        console.log(`✓ API documentation:`);
+        console.log(`  - Auth: POST /api/auth/register, POST /api/auth/login, POST /api/auth/logout`);
+        console.log(`  - Postings: GET /api/postings, POST /api/postings (admin), GET/PUT/DELETE /api/postings/:id (admin)`);
+        console.log(`  - Health: POST/PUT /api/health/:posting_id (admin), GET /api/health/:posting_id`);
+        console.log(`  - Favorites: POST/GET/DELETE /api/favorites (user only)`);
+        console.log(`\n✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
+    } catch (error) {
+      console.error('✗ Failed to start server:', error.message);
+      process.exit(1);
+    }
+  };
 
-startServer();
+  startServer();
+}
 
 module.exports = app;
