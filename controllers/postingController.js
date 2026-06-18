@@ -1,26 +1,29 @@
 const { Posting, Health, Picture } = require('../models');
+const { PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const s3 = require('../config/awsConfig');
 const path = require('path');
 
 // Upload file ke S3
 const uploadToS3 = async (file, fileName) => {
+  const key = `postings/${Date.now()}-${fileName}`;
+  
   const params = {
     Bucket: process.env.AWS_S3_BUCKET_NAME,
-    Key: `postings/${Date.now()}-${fileName}`,
+    Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
-
   };
 
-  return new Promise((resolve, reject) => {
-    s3.upload(params, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data.Location);
-      }
-    });
-  });
+  try {
+    const command = new PutObjectCommand(params);
+    await s3.send(command);
+    
+    // Return S3 URL
+    const s3Url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
+    return s3Url;
+  } catch (error) {
+    throw error;
+  }
 };
 
 const createPosting = async (req, res) => {
@@ -296,15 +299,20 @@ const deletePosting = async (req, res) => {
 
     // Delete pictures from S3
     for (const picture of posting.pictures) {
-      const key = picture.url.split('/').pop();
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: `postings/${key}`,
-      };
-
-      s3.deleteObject(params, (err, data) => {
-        if (err) console.log('Error deleting from S3:', err);
-      });
+      try {
+        // Extract S3 key from URL
+        const urlParts = picture.url.split('/');
+        const key = `postings/${urlParts[urlParts.length - 1]}`;
+        
+        const command = new DeleteObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET_NAME,
+          Key: key,
+        });
+        
+        await s3.send(command);
+      } catch (err) {
+        console.log('Error deleting from S3:', err);
+      }
     }
 
     // Delete posting (cascade delete akan menghapus pictures dan health)
